@@ -1,0 +1,167 @@
+---
+title: "Initial Analysis: Teacher Estimates of Workload"
+author: "Zach Schroeder"
+date: "2/6/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Packages, include = FALSE}
+library(tidyverse)
+library(psych)
+library(knitr)
+library(rio)
+library(cowplot)
+library(colorblindr)
+here::here()
+```
+
+```{r Data Import, cache=TRUE, include = FALSE}
+data_full <- import(here::here("data", "TTGINTT3.sav"), setclass = "tbl_df")
+```
+
+```{r V1 Data Cleaning, exports to data/data.csv, cache = TRUE, echo=FALSE}
+data <- tibble(data_full[,c(6,9, 12, 44, 48:51, 54, 79:90, 232:242, 299:329)])
+
+data <- data %>% 
+  rowwise() %>% 
+  mutate(
+    total_time <- (TT3G17 +TT3G18A +TT3G18B+TT3G18C+
+                      TT3G18D+TT3G18E+TT3G18F+TT3G18G+ 
+                      TT3G18H+TT3G18I+TT3G18J)
+  )
+
+#Variable Names
+
+names(data) <- c("country", "gender", "year_grad", "career_choice", "year_school", "year_total",
+                 "year_ed_nonteach", "year_noned", "sp_need", 
+                 "hours_est", "hours_teach", "hours_prep","hours_team", "hours_gading", "hours_counseling", "hours_mgmt", "hours_genadmin", "hours_prodev", "hours_parents", "hours_extracur", "hours_other", 
+                 "demo_esl", "demo_low_academ", "demo_sped", "demo_behavior", "demo_low_ses", "demo_gt", "demo_immigrant", "demo_refugee", 
+                 "maj_sped", "subject", "class_size", "years_left", "stress", "pto", "m_health", 
+                 "p_health", 
+                 "s_prep", "s_tech", "s_grading", "s_admin", "s_absteach", 
+                 "s_resp_stud_achiev", "s_disc", "s_abuse", "s_req", "s_parent", "s_sped",
+                 
+                 "g_adv", "g_teachagain", "g_changeschool", "g_regret", "g_enjoy", "g_wonder", 
+                 "g_rec", "g_value", "g_me_satis", "g_satis", "salary", "n_salary",
+                 "teach_value", "teach_influence", "teach_media", "hours_total"
+                 )
+# Creating Factors where Factors Ought to Be
+
+data$country <- factor(data$country,
+                       labels = c("Argentina", "United Arab Emirates", "Australia", "Austria", "Belgium", "Belgium-Flemish", 
+                                  "Bulgaria", "Brazil", "Canada", "Chile", "Colombia", "China", 
+                                  "Cyprus", "Czech Republic", "Denmark", "United Kingdom", "Spain", "Estonia",
+                                  "Finland", "France", "Georgia", "Croatia", "Hungary", "Israel",
+                                  "Italy", "Japan", "Kazakhstan", "Korea", "Lithuania", "Latvia", 
+                                  "Mexico", "Malta", "Netherlands", "Norway", "New Zealand", "Portugal",
+                                  "Romania", "Russia", "Saudi Arabia", "Singapore", "Slovakia", "Slovenia", 
+                                  "Sweden", "Turkey", "China", "USA", "Vietnam", "South Africa"))
+
+data$gender <- factor(data$gender,
+                      labels = c("Female", "Male"))
+data$career_choice <- factor(data$career_choice,
+                             labels = c("First", "Not First"))
+data$sp_need <- factor(data$sp_need,
+                       labels = c("None", "Some", "Most", "All"))
+data$demo_esl <- factor(data$demo_esl, 
+                     labels = c("None", "1-10%", "11-30%", "31-60%", "60+%"))
+data$demo_low_academ <- factor(data$demo_low_academ, 
+                     labels = c("None", "1-10%", "11-30%", "31-60%", "60+%"))
+data$demo_sped <- factor(data$demo_sped, 
+                     labels = c("None", "1-10%", "11-30%", "31-60%", "60+%"))
+data$demo_behavior <- factor(data$demo_behavior, 
+                     labels = c("None", "1-10%", "11-30%", "31-60%", "60+%"))
+data$demo_low_ses <- factor(data$demo_low_ses, 
+                     labels = c("None", "1-10%", "11-30%", "31-60%", "60+%"))
+data$demo_gt <- factor(data$demo_gt, 
+                     labels = c("None", "1-10%", "11-30%", "31-60%", "60+%"))
+data$demo_immigrant <- factor(data$demo_immigrant, 
+                     labels = c("None", "1-10%", "11-30%", "31-60%", "60+%"))
+data$demo_refugee <- factor(data$demo_refugee, 
+                     labels = c("None", "1-10%", "11-30%", "31-60%", "60+%"))
+data$subject <- factor(data$subject,
+                       labels = c("English", "Math", "Science", "Social Studies", 
+                                  "Foreign Languages", "Greek/Latin", "Technology",
+                                  "Art", "PhysEd", "Religion", "Prac/Vocational Skills",
+                                  "Other"))
+# At the end of any cleaning session, export the data as smaller file
+#export(data, "data/data.RData")
+```
+
+
+|   Weekly workload of an internationally representative sample of teachers. Each teacher was asked to report the number of hours they worked during the last week using three separate prompts: 
+* *Hours in Classroom: *How many 60-minute hours did you spend on teaching at this school during your most recent complete calendar week?
+* *General Estimate: *During your most recent complete calendar week, approximately how many 60-minute hours did you spend in total on tasks related to your job at this school?  
+* *Specific Estimate: *Approximately how many 60-minute hours did you spend on the following tasks during your most recent complete calendar week, in your job at this school?  
+  + How many 60-minute hours did you spend on teaching at this school during your most recent complete calendar week?  
+  + Individual planning or preparation of lessons either at school or out of school  
+  + Team work and dialogue with colleagues within this school  
+  + Marking/correcting of student work  
+  + Counseling students (including student supervision, mentoring, virtual counselling, career guidance and behaviour guidance)  
+  + Participation in school management  
+  + General administrative work (including communication, paperwork and other clerical duties)  
+  + Professional development activities  
+  + Communication and co-operation with parents or guardians  
+  + Engaging in extracurricular activities (e.g. sports and cultural activities after school)  
+  + Other work tasks  
+
+
+|   Key to the importance of this data are the large differences between teacher responses to each of the prompts. As a stark example: In the USA, teachers report working an average (mean) of 28.9 hours teaching in the classroom each week. This estimate increases to 46.6 hours when teachers are asked to estimate their total number of job-related hours. This number jumps to 63.3 hours when weekly hours are calculated in the specific estimate prompt (summing reported hours from the 12-item list). *Table 1* (featured below) reports each measurement method's outcome by country, arranged from fewest to most total hours worked per week.
+  
+    
+```{r Draft ggplot, echo=FALSE, fig.width=10,fig.height=11}
+data %>% 
+  group_by(country) %>% 
+  summarise(.groups = 'keep',
+    mht = mean(hours_total, na.rm=T),
+    mhr = mean(hours_est, na.rm=T), 
+    mhc = mean(hours_teach, na.rm=T),
+    diff = abs(mht-mhr)
+  ) %>% 
+  ggplot() +
+  geom_bar(aes(x = reorder(country, -mht), y = mht, fill = "Specific Estimate \n(Calculated by task)"),
+           stat = "identity") +
+  geom_bar(aes(x = reorder(country, -mht), y = mhr, fill = "General Estimate \n(Calculated by week)"),
+           stat = "identity") +
+  geom_bar(aes(x = reorder(country, -mht), y = mhc, fill = "Estimated Hours in \nClassroom"),
+           stat = "identity") +
+  geom_hline(mapping = aes(yintercept = 40)) +
+  geom_label(aes(x = 45, y = 50, label = "40-Hour Workweek")) +
+  scale_fill_OkabeIto(order = c(2,5,7)) +
+  labs(title = "Teacher (Under)Estimates of Weekly Working Hours",
+       subtitle = "Sampled states: Arizona, Michigan, Missouri, North Carolina, \nOregon, Pennsylvania and West Virginia", 
+       fill = "Survey Method",
+       y = "Reported Working Hours (by week)",
+       x = "Country",
+       caption = "OECD Teaching and Learning International Survey (2018)") +
+  coord_flip() +
+  ggthemes::theme_fivethirtyeight() +
+  theme(text = element_text(size=10),
+        legend.text=element_text(size=12),
+        legend.title = element_text(size = 12),
+        title = element_text(size = 14))
+```
+
+  
+*Table 1: International Estimates of Teacher Workload*
+```{r Descriptive Statistics, echo=FALSE}
+descriptives <- data %>% 
+  group_by(country) %>% 
+  #group_by(gender, .add = T) %>% 
+  summarise(.groups = "keep", 
+    mean_classroom = round(mean(hours_teach, na.rm = T), 2),
+    mean_general = round(mean(hours_est, na.rm = T), 2),
+    mean_total = round(mean(hours_total, na.rm = T), 2)
+  )
+descriptives <- descriptives %>% 
+  arrange(mean_total)
+knitr::kable(descriptives,
+             col.names = c("Country", "Classroom Hours", "General Estimate", "Specific Estimate"))
+```
+
