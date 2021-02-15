@@ -16,7 +16,7 @@ library(cowplot)
 library(colorblindr)
 library(shiny)
 
-df <- import(here::here("data", "data.RData"), setclass = "tbl_df") 
+df <- import(here::here("data.RData"), setclass = "tbl_df") 
 choice_c <- levels(df$country)
 # Define UI for app that draws a histogram ----
 ui <- fluidPage(
