@@ -4,6 +4,8 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
+    social: menu
+    source_code: https://zjschroeder.github.io/EDLD2_TANIS/
 ---
 
 ```{r setup, include=FALSE}

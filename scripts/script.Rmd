@@ -22,7 +22,7 @@ here::here()
 ```
 
 ```{r Data Import, cache=TRUE, include = FALSE}
-data_full <- import(here::here("data", "TTGINTT3.sav"), setclass = "tbl_df")
+data_full <- import(here::here("data/full_data", "TTGINTT3.sav"), setclass = "tbl_df")
 ```
 
 ```{r V1 Data Cleaning, exports to data/data.csv, cache = TRUE, echo=FALSE}
